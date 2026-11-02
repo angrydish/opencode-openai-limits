@@ -1,13 +1,77 @@
-# OpenAI limits for OpenCode V2
+# OpenAI Limits для OpenCode
 
-Shows the **ChatGPT/Codex** five-hour and weekly usage windows and banked **full reset credits** in OpenCode TUI's right sidebar. Shows remaining %, used %, reset time **and time remaining until reset**, count of available full resets, and each known credit expiry in local time. Usage is cached across tab switches for 60 seconds; a stale reading remains visible while refreshing, and account switches clear it immediately. Countdowns update locally every 30 seconds. Never spends a reset. Never stores credentials or sends them to the TUI: the server plugin uses OpenCode's active OpenAI OAuth connection to query the read-only `https://chatgpt.com/backend-api/wham/usage` and `https://chatgpt.com/backend-api/wham/rate-limit-reset-credits` endpoints. It returns only percentages, counts and timestamps, not credit IDs or personal data.
+**Лимиты Codex и полные сбросы — прямо в правой панели OpenCode TUI.** Без переходов в личный кабинет и без смешивания квот OpenAI с квотами самого OpenCode.
 
-Install globally: clone this repository and add the absolute path to your checkout to `plugins` in `~/.config/opencode/opencode.jsonc`, e.g. `"/path/to/opencode-openai-limits"`. Configuration hot-reloads; `/reload` can force it. Authenticate OpenAI through the ChatGPT/Codex OAuth option in OpenCode. API keys do **not** expose these subscription quotas. OpenCode's own `/api/experimental/usage/limits` is for OpenCode Go/Console, **not** OpenAI.
+```text
+◈  OPENAI · ЛИМИТЫ
 
-These endpoints are undocumented OpenAI APIs: their format or access policy may change. If the detail endpoint fails, the summary count from usage is shown but expiries say "unknown"; no dates are invented. Only available in the full TUI sidebar, not `mini` or desktop. The percentage shown is of the subscription allowance; it is not a token count.
+5 часов   65% осталось
+━━━━┄┄┄┄┄┄  35%
+До сброса: 2 ч 14 мин
+Сброс: 02.11, 18:40
 
-The API's primary/secondary window positions do not identify their duration. The widget uses `limit_window_seconds` to distinguish a 5-hour limit (18,000 seconds) from a weekly one (604,800 seconds). Pro can expose only a weekly *primary* window; in that case the 5-hour field is hidden. Unknown durations are never labeled as either window.
+Неделя    20% осталось
+━━━━━━━━┄┄  80%
+До сброса: 4 д 3 ч
+Сброс: 06.11, 19:00
 
-After switching accounts, a `chatgpt-token-sharing` connection may be active. On this machine, OpenAI returns 401 for the quota endpoints with that method even with a fresh token. Choose a ChatGPT browser/headless sign-in for the account whose quotas you want to see; a successful model call does not imply the token can read the private quota API.
+↻  ПОЛНЫЕ СБРОСЫ · 3
+#1  до 07.11, 06:07
+#2  до 01.12, 02:32
+#3  до 02.12, 05:12
+```
 
-Run `npm test` for parser tests.
+> Пример макета, **не данные реального аккаунта**. Плагин показывает только те окна, которые действительно вернул OpenAI: например, у Pro может быть лишь недельный лимит.
+
+## Возможности
+
+- **Остаток и расход** 5-часового и/или недельного лимита, время сброса и обратный отсчёт.
+- **Полные сбросы:** доступное количество и срок действия каждого, если OpenAI сообщил даты. Сбросы **не применяются** плагином.
+- **Без мигания при переключении вкладок:** последний ответ хранится в памяти TUI 60 секунд, устаревшие данные обновляются в фоне. Обратный отсчёт обновляется локально каждые 30 секунд; при смене аккаунта кэш очищается.
+- Данные запрашиваются через серверный плагин; в TUI передаются только проценты, счётчики и даты — **не токены и не ID сбросов**.
+
+## Установка
+
+Нужны **OpenCode V2** с полноэкранным TUI и подключённый аккаунт OpenAI через ChatGPT/Codex OAuth. Подключение только через API-ключ не предоставляет квоты подписки.
+
+1. Склонируй репозиторий в удобное место:
+
+   ```bash
+   git clone git@github.com:angrydish/opencode-openai-limits.git ~/opencode-openai-limits
+   ```
+
+2. Добавь путь к каталогу в глобальный `~/.config/opencode/opencode.jsonc` (не заменяй уже существующие плагины):
+
+   ```jsonc
+   {
+     "$schema": "https://opencode.ai/config.json",
+     "plugins": ["/home/USER/opencode-openai-limits"]
+   }
+   ```
+
+   Замени `USER` на своё имя пользователя. При `$XDG_CONFIG_HOME` глобальный файл находится в `$XDG_CONFIG_HOME/opencode/opencode.jsonc`. Если клонируешь в другой каталог, укажи его **абсолютный путь**.
+
+3. Открой сессию в полноэкранном `opencode`. Конфигурация обновляется автоматически; если панель не появилась, выполни `/reload`. Правая панель должна быть видна (на узком терминале она может скрываться).
+
+Плагин на этой машине уже установлен из `/home/nick/opencode-plugin`: второй раз добавлять его в конфигурацию **не нужно**.
+
+## Если что-то не отображается
+
+| Симптом | Что проверить |
+| --- | --- |
+| Нет строки «5 часов» | У аккаунта может быть только недельное окно — так бывает у Pro. Окна определяются по длительности, а не по их порядку в ответе API. |
+| Срок сброса «неизвестен» | OpenAI сообщил количество доступных сбросов, но не вернул их подробности. Даты не подставляются наугад. |
+| `OpenAI 401` | Проверь активный аккаунт и способ авторизации. На этой машине метод `chatgpt-token-sharing` не дал доступа к API квот; вход через **Codex browser (legacy)** или **Codex device code (legacy)** работал. |
+| Панели нет в `mini` или Desktop | Плагин предназначен для **полноэкранного TUI** и его правой боковой панели. |
+
+> **Важно:** `/backend-api/wham/usage` и `/backend-api/wham/rate-limit-reset-credits` — недокументированные API OpenAI. OpenAI может изменить формат или условия доступа. Плагин показывает ошибку или отсутствие данных вместо выдуманных процентов. Это квоты *подписки OpenAI*, а не бюджеты OpenCode Go/Console и не число токенов.
+
+## Разработка
+
+```bash
+npm ci
+npm test
+npm run typecheck
+```
+
+Серверный код и запросы к OpenAI — `src/index.ts`; разбор ответа — `src/usage.mjs`; боковая панель — `src/tui.tsx`; кэш — `src/cache.mjs`. Тесты не требуют доступа к аккаунту OpenAI.
