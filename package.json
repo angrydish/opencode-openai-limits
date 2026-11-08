@@ -9,8 +9,10 @@
     "./rpc": "./src/rpc.ts"
   },
   "scripts": {
-    "test": "node --test test/*.test.mjs",
-    "typecheck": "tsc --noEmit"
+    "test": "node --test test/*.test.mjs && python3 -m unittest discover -s test -p 'test_*.py'",
+    "typecheck": "tsc --noEmit",
+    "security:scan": "python3 scripts/secret_scan.py --history HEAD",
+    "security:hooks": "git config --local core.hooksPath .githooks"
   },
   "dependencies": {
     "@opencode/plugin": "2.2.5"

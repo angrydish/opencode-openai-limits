@@ -1,0 +1,9 @@
+#!/bin/sh
+# Inspect the complete history of every local tip being pushed, not just the working tree.
+set -eu
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$local_sha" in
+    0000000000000000000000000000000000000000) continue ;; # deletion
+  esac
+  python3 scripts/secret_scan.py --history "$local_sha" || exit 1
+done

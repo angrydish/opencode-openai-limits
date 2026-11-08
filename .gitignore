@@ -1,4 +1,23 @@
 node_modules/
+__pycache__/
 .env
 .env.*
 *.pem
+# Local credentials and generated/private configuration (never force-add these).
+.npmrc
+.pypirc
+.netrc
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.sqlite
+*.db
+auth.json
+credentials.json
+secrets.json
+*.secret
+*.secrets
+id_rsa*
+id_ed25519*

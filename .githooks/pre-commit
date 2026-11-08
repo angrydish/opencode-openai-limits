@@ -1,0 +1,3 @@
+#!/bin/sh
+# Check the exact staged blobs, including files force-added despite .gitignore.
+exec python3 scripts/secret_scan.py --staged
